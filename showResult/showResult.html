@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta name="viewport" content="initial-scale=1.0, user-scalable=no">
+    <meta charset="utf-8">
+    <title>Direction Test</title>
+    <style>
+    	html, body {
+			  height: 100%;
+			  margin: 0;
+			  padding: 0;
+			}
+
+			#map_canvas {
+			  height: 100%;
+			}
+
+			@media print {
+			  html, body {
+ 			   height: auto;
+ 			 }
+
+ 			 #map_canvas {
+			    height: 100%;
+			  }
+			}
+    	
+      #control {
+        background: #fff;
+        padding: 5px;
+        font-size: 14px;
+        font-family: Arial;
+        border: 1px solid #ccc;
+        box-shadow: 0 2px 2px rgba(33, 33, 33, 0.4);
+        display: none;
+      }
+    </style>
+   	<script type="text/javascript"
+      src="http://maps.googleapis.com/maps/api/js?key=AIzaSyBFFMfe-Up6Fs4-YBGkoEzB9iRTesu1fyc&sensor=false">
+    </script>
+    <script>
+		//return all the points points[]
+		function readFile(filename){
+			var fso = new ActiveXObject("Scripting.FileSystemObject");
+			var f = fso.OpenTextFile(filename,1);
+			var s = "";
+			var t = [];
+			var r = [];
+			var m = 0;
+			while (!f.AtEndOfStream){
+				s = f.ReadLine();
+				t = s.split(' ');
+				if( t.length != 4 ) continue;
+				r.push(t[0]+' '+t[1]+','+t[2]+' '+t[3]);
+			}
+			f.Close();
+			return r;
+		}
+	</script>
+    <script>
+		//global varients
+		var map;
+		var points = [];
+		//var markersArray = [];
+
+		function initialize() {
+        
+			var c = new google.maps.LatLng(0.000000, 150.000000);
+			var mapOptions = {
+				zoom: 3,
+				mapTypeId: google.maps.MapTypeId.SATELLITE,
+				center: c
+			}
+			map = new google.maps.Map(document.getElementById('map_canvas'), mapOptions);
+        
+			var control = document.getElementById('control');
+			control.style.display = 'block';
+			map.controls[google.maps.ControlPosition.TOP].push(control);
+		}
+
+		function prepare() {
+      	
+			//clearOverlays();
+			points = [];
+      	
+			points = readFile(document.getElementById('in').value);
+			
+			if( points.length > 0 ){
+				draw();
+			}
+		}
+      
+		function draw() {
+			
+			var start_line = parseInt(document.getElementById('line').value, 10);
+			var sample_rate = parseInt(document.getElementById('interval').value, 10);
+			var radius = parseInt(document.getElementById('radius').value, 10);
+			
+			var road_end_points;
+			var point_1;
+			var point_2;
+			var c;
+			for( var step = start_line; step < points.length; step = step + sample_rate ){
+			
+				road_end_points = points[step].split(',');
+				point_1 = road_end_points[0].split(' ');
+				point_2 = road_end_points[1].split(' ');
+				
+				var c = new google.maps.LatLng( 
+					( parseFloat(point_1[0]) + parseFloat(point_2[0]) )/2,
+					( parseFloat(point_1[1]) + parseFloat(point_2[1]) )/2 );
+				
+				if( step == start_line ){
+					map.setCenter(c);
+				}
+				circle = new google.maps.Circle({
+					center: c,
+					radius: radius,
+					map: map,
+					strokeColor: "#FF0000",
+					//strokeOpacity: 0.8,
+					//strokeWeight: 2,
+					fillColor: "#FF0000"
+					//fillOpacity: 0.35
+				});
+				//markersArray.push(circle);
+				
+				if( map.getZoom() < 7 ){
+					map.setZoom(7);
+				}
+
+			}
+		}
+
+		// Removes the overlays from the map, but keeps them in the array
+		//function clearOverlays() {
+		//		
+		//	if (markersArray) {
+		//		for (i in markersArray) {
+ 		//	    markersArray[i].setMap(null);
+		//		}
+		//	}
+		//	markersArray.length = 0;
+		//}        
+    </script>
+  </head>
+  <body onload="initialize()">
+	<div id="control">
+		<b>Input File: </b>
+		<input type="file" id="in" name="in" />
+		<b>Start Line: </b>
+		<input type="text" id="line" name="line" value="0" size="1" />
+		<b>Interval: </b>
+		<input type="text" id="interval" name="interval" value="2" size="1" />
+		<b>Radius: </b>
+		<input type="text" id="radius" name="radius" value="500" size="1" />
+		<input type="button" value="Draw" onclick="prepare();"/>
+    </div>
+	<div id="map_canvas">
+	</div>
+  </body>
+</html>
